@@ -77,21 +77,20 @@ def crawling(keyword) :
 
 
 if __name__ == '__main__':
+    # keywords = ["유사강간", "준강간"] # For Testing
+    # keywords = ["유사강간","준강간","준강제추행"] # For Testing
     keywords = ["강제추행","강간","유사강간","준강간","준강제추행","간음"]
-    # keywords = ["유사강간","준강간","준강제추행"]
-
-    # For Debugging
-    # crawled_data = crawling(keywords[3])
 
     # Run Thread For each keyword
     twrv = [ThreadWithReturnValue(target=crawling, args=(keyword,)) for keyword in keywords]
 
     crawled_data = []
     for t in twrv:
-        crawled_data.append(t.join())
+        crawled_data.extend(t.join())
 
     # For Dumping - Pandas DataFrame And Excel File
-    df_construction = [['id', 'content']]
+    column_names = ['id', 'content']
+    df_construction = []
     for idx, content in enumerate(crawled_data):
         for sentence_idx, content_line in enumerate(content.split("\n")):
             if sentence_idx == 0:
@@ -102,5 +101,20 @@ if __name__ == '__main__':
                 df_construction.append(['', content_line])
         df_construction.append(['', ''])
 
-    df = pd.DataFrame(df_construction)
-    df.to_excel("./data.xlsx", index=False, header=False)
+    df = pd.DataFrame(df_construction, columns=column_names)
+
+    # # For Assignment to each other people
+    N = 500 # case idx -- this code is separating data per this number.
+    split_index1 = df.loc[df['id'] == str(N)].index[0]
+    split_index2 = df.loc[df['id'] == str(N+N)].index[0]
+    df_person1 = df[:split_index1]
+    df_person2 = df[split_index1:split_index2]
+    df_person3 = df[split_index2:]
+
+    to_excel_fn = "./data.xlsx"
+    writer = pd.ExcelWriter(to_excel_fn, engine='xlsxwriter')
+    df.to_excel(writer, sheet_name="RAW DATA", index=False)
+    df_person1.to_excel(writer, sheet_name="준호 할당량", index=False)
+    df_person2.to_excel(writer, sheet_name="자현형 할당량", index=False)
+    df_person3.to_excel(writer, sheet_name="세훈 할당량", index=False)
+    writer.save()
