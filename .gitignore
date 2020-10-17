@@ -130,3 +130,7 @@ dmypy.json
 
 # For Pycharm
 .idea/
+
+# For Crhomedriver -- Each OS Systems
+crawler/chromedriver
+crawler/chromedriver.exe
