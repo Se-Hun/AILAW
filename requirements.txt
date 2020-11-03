@@ -2,3 +2,4 @@ openpyxl
 pandas
 selenium
 xlsxwriter
+xlrd
