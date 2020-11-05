@@ -1,4 +1,5 @@
 import os
+import re
 
 import pandas as pd
 import numpy as np
@@ -46,11 +47,6 @@ def parse_dataframe(df, column_names_to_keys):
     case_ids = df.loc[1:, 'ID'].tolist()
     case_ids = set(case_ids)
 
-    # case_id_list = df.loc[1:, 'ID'].tolist()
-    # case_text_list = df.loc[1:, '범죄사실'].tolist()
-    # case_num_list = df.loc[1:, '개수'].tolist()
-    # case_title_list = df.loc[1:, '제목'].tolist()
-
     # match test
     for case_id in case_ids:
         target_case_nums = df[(df['ID'] == case_id)]['개수'].tolist()
@@ -64,11 +60,10 @@ def parse_dataframe(df, column_names_to_keys):
         target_title = target_case_titles[0]
         assert len(df[df['ID'] == case_id]) == len(df[df['제목'] == target_title]), "At same title, Another Case is found at Case ID {}".format(case_id)
 
+    # build Case Data --> JSON
     cases = []
     for data_idx, case_id in enumerate(case_ids):
         case_title = df[df['ID'] == case_id]['제목'].tolist()[0]
-        # case_paragraphs = df[df['ID'] == case_id]['범죄사실'].tolist()
-
         feature_df = df[df['ID'] == case_id][feature_names]
 
         cases.append({
@@ -85,25 +80,68 @@ def parse_dataframe(df, column_names_to_keys):
 
     return cases
 
-def build_tag(fns, column_names_to_keys):
+def merge_texts_and_tags(cases, ner_tags):
+    tagged_cases = []
+    for data_idx, case in enumerate(cases):
+        case_id = case["id"]
+        case_title = case["title"]
+        tagged_cases.append({
+            "id": case_id,
+            "title": case_title,
+            "sentences" : []
+        })
+
+        sentences = case["sentences"]
+        new_sentences = []
+        for sentence in sentences:
+            tagging_list = [
+                {
+                    "start" : int(sentence[tag_name + "/start"]),
+                    "end" : int(sentence[tag_name + "/start"]) + len(sentence[tag_name]),
+                    "word" : sentence[tag_name],
+                    "tag" : tag_name
+                } for tag_name in ner_tags]
+            tagging_list = sorted(tagging_list, key=lambda x: x["start"])
+
+            target_text = sentence["text"]
+            inserted_string_length = 0
+            for tag_info in tagging_list:
+                tag_name = tag_info["tag"]
+
+                start_idx = tag_info["start"] + inserted_string_length
+                start_tag = "<" + tag_name + ">"
+                target_text = target_text[:start_idx] + start_tag + target_text[start_idx:]
+                inserted_string_length = inserted_string_length + len(start_tag)
+
+                end_idx = tag_info["end"] + inserted_string_length
+                end_tag = "</" + tag_name + ">"
+                target_text = target_text[:end_idx] + end_tag + target_text[end_idx:]
+                inserted_string_length = inserted_string_length + len(end_tag)
+
+                # valid
+                valid_word = target_text[start_idx+len(start_tag):end_idx]
+                assert (valid_word == tag_info['word']), "Nested Tag Or Error In Case ID {}".format(case_id)
+
+            new_sentences.append(target_text)
+        tagged_cases[data_idx]["sentences"] = new_sentences
+
+    return tagged_cases
+
+def build_data(fns, column_names_to_keys, ner_tags):
     in_fn = fns['input']
     to_fn = fns['output']
 
     df = pd.read_excel(in_fn, sheet_name = '시트1')
 
     #TODO : (1) 필요한 데이터 excel에서 파싱하기
-    case_dict = parse_dataframe(df, column_names_to_keys)
+    cases = parse_dataframe(df, column_names_to_keys)
 
-    # neccessary_columns = df.columns[3:14]
-    # for idx, col in enumerate(neccessary_columns):
-    #     if idx % 2 == 0:
-    #         df[col] = df[col].apply(lambda x: len(x))
+    # TODO : (2) 각 문장에 태그 부착하기
+    tagged_cases = merge_texts_and_tags(cases, ner_tags)
 
-    # df['인덱스들'] = "[" + df[neccessary_columns].apply(lambda x: ",".join(x.values.astype(str)), axis=1) + "]"
+    print(tagged_cases)
 
-    # TODO : (2) 문장 splitter 적용하기
-
-    # TODO : (3) 각 문장에 태그 부착하기
+    # TODO : (3) 문장 splitter 적용하기
 
     # TODO : (4) Text File에 저장 --> 판례별로 구분자 "------" 넣어주기
 
@@ -123,15 +161,13 @@ if __name__ == '__main__':
         "어디서_ans" : "crime.where/start",
         "어떤 범행이 발생했나요?" : "crime.what",
         "어떤범행_ans" : "crime.what/start",
-        "피해자의 나이가 어떻게 되나요?" : "victim.age",
-        "피해자나이_ans" : "victim.age/start",
-        "피해자와 가해자의 관계가 어떻게 되나요?" : "victim.attacker.relation",
-        "피해자와 가해자 관계_ans" : "victim.attacker.relation/start"
+        # "피해자의 나이가 어떻게 되나요?" : "victim.age",
+        # "피해자나이_ans" : "victim.age/start",
+        # "피해자와 가해자의 관계가 어떻게 되나요?" : "victim.attacker.relation",
+        # "피해자와 가해자 관계_ans" : "victim.attacker.relation/start"
     }
+    ner_tags = ["victim.who", "crime.when", "crime.where", "crime.what",
+                # "victim.age", "victim.attacker.relation"
+                ]
 
-    # feature_names = ["피해자가 누구인가요?", "피해자_ans", "범행이 언제 발생했나요?", "언제_ans", "범행이 어디서 발생했나요?", "어디서_ans",
-    #                  "어떤 범행이 발생했나요?", "어떤범행_ans", "피해자의 나이가 어떻게 되나요?", "피해자나이_ans",
-    #                  "피해자와 가해자의 관계가 어떻게 되나요?", "피해자와 가해자 관계_ans"]
-    # to_ner_tags = ["victim.who", "crime.when", "crime.where", "crime.what", "victim.age", "victim.attacker.relation"]
-
-    build_tag(fns, column_names_to_keys)
+    build_data(fns, column_names_to_keys, ner_tags)
