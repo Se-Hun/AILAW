@@ -40,6 +40,45 @@ import numpy as np
 #
 #         fp.write("------------------------------\n")
 
+def parse_dataframe(df):
+    case_ids = df.loc[1:, 'ID'].tolist()
+    case_ids = set(case_ids)
+
+    # case_id_list = df.loc[1:, 'ID'].tolist()
+    # case_text_list = df.loc[1:, '범죄사실'].tolist()
+    # case_num_list = df.loc[1:, '개수'].tolist()
+    # case_title_list = df.loc[1:, '제목'].tolist()
+
+    # match test
+    for case_id in case_ids:
+        target_case_nums = df[(df['ID'] == case_id)]['개수'].tolist()
+        for target_num in target_case_nums:
+            assert len(df[df['ID'] == case_id]) == target_num, "Case Num is not matched in Case ID {}".format(case_id)
+
+        target_case_titles = df[(df['ID'] == case_id)]['제목'].tolist()
+        title_validation = set(target_case_titles)
+        assert len(title_validation) == 1, "Case Title is not matched in Case ID {}".format(case_id)
+
+        target_title = target_case_titles[0]
+        assert len(df[df['ID'] == case_id]) == len(df[df['제목'] == target_title]), "At same title, Another Case is found at Case ID {}".format(case_id)
+
+    cases = []
+    for data_idx, case_id in enumerate(case_ids):
+        case_title = df[df['ID'] == case_id]['제목'].tolist()[0]
+        case_paragraphs = df[df['ID'] == case_id]['범죄사실'].tolist()
+
+        cases.append({
+            "id" : case_id,
+            "title" : case_title,
+            "paragraphs" : []
+        })
+        for paragraph in case_paragraphs:
+            cases[data_idx]["paragraphs"].append({
+                "text" : paragraph
+            })
+
+    return cases
+
 def build_tag(fns, ner_tags):
     in_fn = fns['input']
     to_fn = fns['output']
@@ -47,7 +86,9 @@ def build_tag(fns, ner_tags):
     df = pd.read_excel(in_fn, sheet_name = '시트1')
 
     #TODO : (1) 필요한 데이터 excel에서 파싱하기
-    neccessary_columns = df.columns[3:]
+    case_dict = parse_dataframe(df)
+
+    neccessary_columns = df.columns[3:14]
     for idx, col in enumerate(neccessary_columns):
         if idx % 2 == 0:
             df[col] = df[col].apply(lambda x: len(x))
