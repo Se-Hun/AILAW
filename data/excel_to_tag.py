@@ -40,7 +40,9 @@ import numpy as np
 #
 #         fp.write("------------------------------\n")
 
-def parse_dataframe(df):
+def parse_dataframe(df, column_names_to_keys):
+    feature_names = list(column_names_to_keys.keys())
+
     case_ids = df.loc[1:, 'ID'].tolist()
     case_ids = set(case_ids)
 
@@ -65,35 +67,39 @@ def parse_dataframe(df):
     cases = []
     for data_idx, case_id in enumerate(case_ids):
         case_title = df[df['ID'] == case_id]['제목'].tolist()[0]
-        case_paragraphs = df[df['ID'] == case_id]['범죄사실'].tolist()
+        # case_paragraphs = df[df['ID'] == case_id]['범죄사실'].tolist()
+
+        feature_df = df[df['ID'] == case_id][feature_names]
 
         cases.append({
             "id" : case_id,
             "title" : case_title,
-            "paragraphs" : []
+            "sentences" : []
         })
-        for paragraph in case_paragraphs:
-            cases[data_idx]["paragraphs"].append({
-                "text" : paragraph
-            })
+        for features in feature_df.iterrows():
+            sentence = {}
+            for feature_name in feature_names:
+                sentence[column_names_to_keys[feature_name]] = features[1].loc[feature_name]
+
+            cases[data_idx]["sentences"].append(sentence)
 
     return cases
 
-def build_tag(fns, ner_tags):
+def build_tag(fns, column_names_to_keys):
     in_fn = fns['input']
     to_fn = fns['output']
 
     df = pd.read_excel(in_fn, sheet_name = '시트1')
 
     #TODO : (1) 필요한 데이터 excel에서 파싱하기
-    case_dict = parse_dataframe(df)
+    case_dict = parse_dataframe(df, column_names_to_keys)
 
-    neccessary_columns = df.columns[3:14]
-    for idx, col in enumerate(neccessary_columns):
-        if idx % 2 == 0:
-            df[col] = df[col].apply(lambda x: len(x))
+    # neccessary_columns = df.columns[3:14]
+    # for idx, col in enumerate(neccessary_columns):
+    #     if idx % 2 == 0:
+    #         df[col] = df[col].apply(lambda x: len(x))
 
-    df['인덱스들'] = "[" + df[neccessary_columns].apply(lambda x: ",".join(x.values.astype(str)), axis=1) + "]"
+    # df['인덱스들'] = "[" + df[neccessary_columns].apply(lambda x: ",".join(x.values.astype(str)), axis=1) + "]"
 
     # TODO : (2) 문장 splitter 적용하기
 
@@ -107,6 +113,25 @@ if __name__ == '__main__':
         "output": os.path.join("./", "run", "ner_tag.txt")
     }
 
-    ner_tags = ["victim.who", "crime.when", "crime.where", "crime.what", "victim.age", "victim.attacker.relation"]
+    column_names_to_keys = {
+        "범죄사실" : "text",
+        "피해자가 누구인가요?" : "victim.who",
+        "피해자_ans" : "victim.who/start",
+        "범행이 언제 발생했나요?" : "crime.when",
+        "언제_ans" : "crime.when/start",
+        "범행이 어디서 발생했나요?" : "crime.where",
+        "어디서_ans" : "crime.where/start",
+        "어떤 범행이 발생했나요?" : "crime.what",
+        "어떤범행_ans" : "crime.what/start",
+        "피해자의 나이가 어떻게 되나요?" : "victim.age",
+        "피해자나이_ans" : "victim.age/start",
+        "피해자와 가해자의 관계가 어떻게 되나요?" : "victim.attacker.relation",
+        "피해자와 가해자 관계_ans" : "victim.attacker.relation/start"
+    }
 
-    build_tag(fns, ner_tags)
+    # feature_names = ["피해자가 누구인가요?", "피해자_ans", "범행이 언제 발생했나요?", "언제_ans", "범행이 어디서 발생했나요?", "어디서_ans",
+    #                  "어떤 범행이 발생했나요?", "어떤범행_ans", "피해자의 나이가 어떻게 되나요?", "피해자나이_ans",
+    #                  "피해자와 가해자의 관계가 어떻게 되나요?", "피해자와 가해자 관계_ans"]
+    # to_ner_tags = ["victim.who", "crime.when", "crime.where", "crime.what", "victim.age", "victim.attacker.relation"]
+
+    build_tag(fns, column_names_to_keys)
