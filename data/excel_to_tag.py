@@ -69,14 +69,14 @@ def parse_dataframe(df, column_names_to_keys):
         cases.append({
             "id" : case_id,
             "title" : case_title,
-            "sentences" : []
+            "paragraphs" : []
         })
         for features in feature_df.iterrows():
-            sentence = {}
+            paragraph = {}
             for feature_name in feature_names:
-                sentence[column_names_to_keys[feature_name]] = features[1].loc[feature_name]
+                paragraph[column_names_to_keys[feature_name]] = features[1].loc[feature_name]
 
-            cases[data_idx]["sentences"].append(sentence)
+            cases[data_idx]["paragraphs"].append(paragraph)
 
     return cases
 
@@ -88,22 +88,22 @@ def merge_texts_and_tags(cases, ner_tags):
         tagged_cases.append({
             "id": case_id,
             "title": case_title,
-            "sentences" : []
+            "paragraphs" : []
         })
 
-        sentences = case["sentences"]
-        new_sentences = []
-        for sentence in sentences:
+        paragraphs = case["paragraphs"]
+        new_paragraphs = []
+        for paragraph in paragraphs:
             tagging_list = [
                 {
-                    "start" : int(sentence[tag_name + "/start"]),
-                    "end" : int(sentence[tag_name + "/start"]) + len(sentence[tag_name]),
-                    "word" : sentence[tag_name],
+                    "start" : int(paragraph[tag_name + "/start"]),
+                    "end" : int(paragraph[tag_name + "/start"]) + len(paragraph[tag_name]),
+                    "word" : paragraph[tag_name],
                     "tag" : tag_name
                 } for tag_name in ner_tags]
             tagging_list = sorted(tagging_list, key=lambda x: x["start"])
 
-            target_text = sentence["text"]
+            target_text = paragraph["text"]
             inserted_string_length = 0
             for tag_info in tagging_list:
                 tag_name = tag_info["tag"]
@@ -120,10 +120,10 @@ def merge_texts_and_tags(cases, ner_tags):
 
                 # valid
                 valid_word = target_text[start_idx+len(start_tag):end_idx]
-                assert (valid_word == tag_info['word']), "Nested Tag Or Error In Case ID {}".format(case_id)
+                # assert (valid_word == tag_info['word']), "Nested Tag Or Error In Case ID {}".format(case_id)
 
-            new_sentences.append(target_text)
-        tagged_cases[data_idx]["sentences"] = new_sentences
+            new_paragraphs.append(target_text)
+        tagged_cases[data_idx]["paragraphs"] = new_paragraphs
 
     return tagged_cases
 
@@ -139,7 +139,7 @@ def build_data(fns, column_names_to_keys, ner_tags):
     # TODO : (2) 각 문장에 태그 부착하기
     tagged_cases = merge_texts_and_tags(cases, ner_tags)
 
-    print(tagged_cases)
+    # print(tagged_cases)
 
     # TODO : (3) 문장 splitter 적용하기
 
