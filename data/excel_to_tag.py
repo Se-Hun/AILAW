@@ -1,8 +1,9 @@
 import os
-import re
+import json
 
 import pandas as pd
-import numpy as np
+
+from common.utils import prepare_dir
 
 # file_path = "../korcl_2019/law.xlsx"
 # law_df = pd.read_excel(file_path, sheet_name = 'Sheet1')
@@ -127,6 +128,30 @@ def merge_texts_and_tags(cases, ner_tags):
 
     return tagged_cases
 
+def apply_sentence_splitter(cases):
+    import kss # korean sentence splitter
+
+    spltted_cases = []
+    for data_idx, case in enumerate(cases):
+        case_id = case["id"]
+        case_title = case["title"]
+        spltted_cases.append({
+            "id": case_id,
+            "title": case_title,
+            "paragraphs" : []
+        })
+
+        paragraphs = case["paragraphs"]
+        new_paragraphs = []
+        for paragraph in paragraphs:
+            sentences = []
+            for sentence in kss.split_sentences(paragraph):
+                sentences.append(sentence)
+            new_paragraphs.append(sentences)
+        spltted_cases[data_idx]["paragraphs"] = new_paragraphs
+
+    return spltted_cases
+
 def build_data(fns, column_names_to_keys, ner_tags):
     in_fn = fns['input']
     to_fn = fns['output']
@@ -139,16 +164,26 @@ def build_data(fns, column_names_to_keys, ner_tags):
     # TODO : (2) 각 문장에 태그 부착하기
     tagged_cases = merge_texts_and_tags(cases, ner_tags)
 
-    # print(tagged_cases)
-
     # TODO : (3) 문장 splitter 적용하기
+    spltted_cases = apply_sentence_splitter(tagged_cases)
 
-    # TODO : (4) Text File에 저장 --> 판례별로 구분자 "------" 넣어주기
+    # print(spltted_cases)
+
+    # TODO : (4) JSON File에 저장
+    with open(to_fn, 'w', encoding='utf-8') as f:
+        json.dump(spltted_cases, f, indent=4, ensure_ascii=False)
+        print("[Train] Show And Tell Token data is dumped at  ", to_fn)
+
+    # TODO : (optional-4) Text File에 저장 --> 판례별로 구분자 "------" 넣어주기
 
 if __name__ == '__main__':
+    to_folder = os.path.join("./", "run")
+    prepare_dir(to_folder)
+
     fns = {
         "input": os.path.join("./", "original", "law.xlsx"),
-        "output": os.path.join("./", "run", "ner_tag.txt")
+        # "output": os.path.join(to_folder, "ner_tag.txt")
+        "output" : os.path.join(to_folder, "law_ner_tag.json")
     }
 
     column_names_to_keys = {
