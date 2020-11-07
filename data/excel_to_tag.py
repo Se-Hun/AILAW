@@ -94,6 +94,7 @@ def merge_texts_and_tags(cases, ner_tags):
 
         paragraphs = case["paragraphs"]
         new_paragraphs = []
+        valid_bool = False
         for paragraph in paragraphs:
             tagging_list = [
                 {
@@ -121,7 +122,12 @@ def merge_texts_and_tags(cases, ner_tags):
 
                 # valid
                 valid_word = target_text[start_idx+len(start_tag):end_idx]
+                if (valid_word != tag_info['word']):
+                    valid_bool = True
                 # assert (valid_word == tag_info['word']), "Nested Tag Or Error In Case ID {}".format(case_id)
+
+        if valid_bool:
+            print("Nested Tag Or Error In Case ID {}".format(case_id))
 
             new_paragraphs.append(target_text)
         tagged_cases[data_idx]["paragraphs"] = new_paragraphs
@@ -158,7 +164,7 @@ def build_data(fns, column_names_to_keys, ner_tags):
 
     df = pd.read_excel(in_fn, sheet_name = '시트1')
 
-    #TODO : (1) 필요한 데이터 excel에서 파싱하기
+    # TODO : (1) 필요한 데이터 excel에서 파싱하기
     cases = parse_dataframe(df, column_names_to_keys)
 
     # TODO : (2) 각 문장에 태그 부착하기
@@ -167,14 +173,121 @@ def build_data(fns, column_names_to_keys, ner_tags):
     # TODO : (3) 문장 splitter 적용하기
     spltted_cases = apply_sentence_splitter(tagged_cases)
 
-    # print(spltted_cases)
-
     # TODO : (4) JSON File에 저장
     with open(to_fn, 'w', encoding='utf-8') as f:
         json.dump(spltted_cases, f, indent=4, ensure_ascii=False)
         print("[Train] Show And Tell Token data is dumped at  ", to_fn)
 
     # TODO : (optional-4) Text File에 저장 --> 판례별로 구분자 "------" 넣어주기
+
+def apply_sentence_splitter_new(cases, ner_tags):
+    import kss  # korean sentence splitter
+
+    splitted_cases = []
+    for data_idx, case in enumerate(cases):
+        case_id = case["id"]
+        case_title = case["title"]
+        splitted_cases.append({
+            "id": case_id,
+            "title": case_title,
+            "paragraphs": case["paragraphs"],
+            "sentences" : []
+        })
+
+        paragraphs = case["paragraphs"]
+        new_sentences = []
+        global_sentence_idx = 0
+        for paragraph in paragraphs:
+            paragraph_text = paragraph["text"]
+
+            tagging_list = [
+                {
+                    "start": int(paragraph[tag_name + "/start"]),
+                    "end": int(paragraph[tag_name + "/start"]) + len(paragraph[tag_name]),
+                    "word": paragraph[tag_name],
+                    "tag": tag_name
+                } for tag_name in ner_tags]
+            tagging_list = sorted(tagging_list, key=lambda x: x["start"]) # for algorithm speed
+
+            # sentences = []
+            merged_sentence_length = 0
+            minus_index = 0
+            for sentence in kss.split_sentences(paragraph_text):
+                merged_sentence_length = merged_sentence_length + len(sentence) + 1
+
+                new_sentences.append({
+                    "text" : sentence,
+                    "tag_info" : []
+                })
+
+                for tag_info in tagging_list:
+                    if tag_info["end"] <= merged_sentence_length:
+                        tagging_list.remove(tag_info)
+
+                        tag_info["start"] = tag_info["start"] - minus_index
+                        tag_info["end"] = tag_info["end"] - minus_index
+                        new_sentences[global_sentence_idx]["tag_info"].append(tag_info)
+                minus_index = minus_index + len(sentence) + 1
+                global_sentence_idx = global_sentence_idx + 1
+
+            # new_paragraphs.append(sentences)
+        splitted_cases[data_idx]["sentences"] = new_sentences
+
+    return splitted_cases
+
+def merge_texts_and_tags_new(cases):
+    merged_cases = []
+    for data_idx, case in enumerate(cases):
+        merged_cases.append({
+            "id": case["id"],
+            "title": case["title"],
+            "paragraphs": case["paragraphs"],
+            "sentences": case["sentences"],
+            "tagged_sentences" : []
+        })
+
+        sentences = case["sentences"]
+        tagged_sentences = []
+        for sentence in sentences:
+            if len(sentence["tag_info"]) == 0:
+                tagged_sentences.append(sentence["text"])
+            else:
+                plus_index = 0
+                sentence_text = sentence["text"]
+                for tag_info in sentence["tag_info"]:
+                    start_idx = tag_info['start'] + plus_index
+                    start_tag = "<" + tag_info['tag'] + ">"
+                    sentence_text = sentence_text[:start_idx] + start_tag + sentence_text[start_idx:]
+                    plus_index = plus_index + len(start_tag)
+
+                    end_idx = tag_info['end'] + plus_index
+                    end_tag = "</" + tag_info['tag'] + ">"
+                    sentence_text = sentence_text[:end_idx] + end_tag + sentence_text[end_idx:]
+                    plus_index = plus_index + len(end_tag)
+
+                tagged_sentences.append(sentence_text)
+        merged_cases[data_idx]["tagged_sentences"] = tagged_sentences
+
+    return merged_cases
+
+def build_data_new(fns, column_names_to_keys, ner_tags):
+    in_fn = fns['input']
+    to_fn = fns['output']
+
+    df = pd.read_excel(in_fn, sheet_name = '시트1')
+
+    # TODO : (1) 필요한 데이터 excel에서 파싱하기
+    cases = parse_dataframe(df, column_names_to_keys)
+    print(cases)
+
+    # TODO : (2) 문장 Splitter 적용하기
+    splitted_cases = apply_sentence_splitter_new(cases, ner_tags)
+
+    # TODO : (3) 각 문장에 태그 부착하기
+    merged_cases = merge_texts_and_tags_new(splitted_cases)
+    print(merged_cases)
+
+    # TODO : (4) JSON File에 저장
 
 if __name__ == '__main__':
     to_folder = os.path.join("./", "run")
@@ -205,4 +318,5 @@ if __name__ == '__main__':
                 # "victim.age", "victim.attacker.relation"
                 ]
 
-    build_data(fns, column_names_to_keys, ner_tags)
+    # build_data(fns, column_names_to_keys, ner_tags)
+    build_data_new(fns, column_names_to_keys, ner_tags)
