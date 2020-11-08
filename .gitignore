@@ -140,3 +140,4 @@ crawler/chromedriver.exe
 *.json
 *.csv
 *.tsv
+*.txt
