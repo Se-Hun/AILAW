@@ -1,3 +1,4 @@
+import re
 import json
 from threading import Thread
 import queue
@@ -20,10 +21,11 @@ class ThreadWithReturnValue(object):
         self._t.join()
         return self._que.get()
 
-def crawlCases(driver, wait):
+def crawlCases(driver, wait, prev_data_title_list):
     url_list = driver.find_element_by_xpath('//*[@id="search_result"]/div/article/dl').find_elements_by_tag_name('a')
 
     contents = []
+    titles = []
     for url in url_list:
         url.click()
 
@@ -40,15 +42,54 @@ def crawlCases(driver, wait):
             exit()
         driver.switch_to.frame(iframes[0])
 
-        title = driver.find_element_by_xpath("/html/body")
-        contents.append(title.text)
+        case = driver.find_element_by_xpath("/html/body")
+        case = case.text
+
+        title = case.split("\n")[0]
+        title = title.replace(",", "")
+        title = title.replace(" ", "")
+
+        if "선고" in title:
+            title = title.split("선고")[1]
+        if "【" in title:
+            title = title.split("【")[0]
+        if ":" in title:
+            title = title.split(":")[0]
+
+        # title = re.sub('[^【]', '', title)
+        # # title = re.sub('[【】]', '', title)
+        # # match = re.search("[【】]", title)
+        # # title.mat
+
+        if title not in prev_data_title_list:
+            contents.append(case)
+            titles.append(title)
 
         driver.switch_to.window(window_before)
 
     return contents
 
 
-def crawling(keyword) :
+def crawling(keyword):
+    prev_data_title_list = []
+    prev_data_fn = "../korcl_2019/law.json"
+    with open(prev_data_fn, 'r', encoding='utf-8') as f:
+        prev_data = json.load(f)['data']
+
+        for prev_case in prev_data:
+            prev_case_title = prev_case['title']
+            prev_case_title = prev_case_title.replace(",", "")
+            prev_case_title = prev_case_title.replace(" ", "")
+
+            if "선고" in prev_case_title:
+                prev_case_title = prev_case_title.split("선고")[1]
+            if "【" in prev_case_title:
+                prev_case_title = prev_case_title.split("【")[0]
+            if ":" in prev_case_title:
+                prev_case_title = prev_case_title.split(":")[0]
+
+            prev_data_title_list.append(prev_case_title)
+
     print("Target Keyword : {}".format(keyword))
 
     all_data = []
@@ -66,7 +107,7 @@ def crawling(keyword) :
             break
         prev = driver.current_url
 
-        content = crawlCases(driver, wait)
+        content = crawlCases(driver, wait, prev_data_title_list)
         cases.extend(content)
         driver.find_element_by_xpath('/html/body/div[2]/section/div/article/div[2]').find_elements_by_tag_name('a')[-1].click()
         wait.until(EC.presence_of_element_located((By.XPATH, '/html/body/div[2]/section/div/article/div[2]')))
@@ -79,7 +120,10 @@ def crawling(keyword) :
 if __name__ == '__main__':
     # keywords = ["유사강간", "준강간"] # For Testing
     # keywords = ["유사강간","준강간","준강제추행"] # For Testing
-    keywords = ["강제추행","강간","유사강간","준강간","준강제추행","간음"]
+    keywords = ["강제추행","강간","유사강간","준강간","준강제추행","간음"] # 성범죄
+
+    # keywords = [] # 폭행
+    # keywords = [] # 살인
 
     # Run Thread For each keyword
     twrv = [ThreadWithReturnValue(target=crawling, args=(keyword,)) for keyword in keywords]
@@ -104,17 +148,19 @@ if __name__ == '__main__':
     df = pd.DataFrame(df_construction, columns=column_names)
 
     # # For Assignment to each other people
-    N = 500 # case idx -- this code is separating data per this number.
-    split_index1 = df.loc[df['id'] == str(N)].index[0]
-    split_index2 = df.loc[df['id'] == str(N+N)].index[0]
-    df_person1 = df[:split_index1]
-    df_person2 = df[split_index1:split_index2]
-    df_person3 = df[split_index2:]
+    # N = 500 # case idx -- this code is separating data per this number.
+    # split_index1 = df.loc[df['id'] == str(N)].index[0]
+    # split_index2 = df.loc[df['id'] == str(N+N)].index[0]
+    # df_person1 = df[:split_index1]
+    # df_person2 = df[split_index1:split_index2]
+    # df_person3 = df[split_index2:]
 
-    to_excel_fn = "./data.xlsx"
-    writer = pd.ExcelWriter(to_excel_fn, engine='xlsxwriter')
-    df.to_excel(writer, sheet_name="RAW DATA", index=False)
-    df_person1.to_excel(writer, sheet_name="준호 할당량", index=False)
-    df_person2.to_excel(writer, sheet_name="자현형 할당량", index=False)
-    df_person3.to_excel(writer, sheet_name="세훈 할당량", index=False)
-    writer.save()
+    to_excel_fn = "./new_data.xlsx"
+    df.to_excel(to_excel_fn)
+
+    # writer = pd.ExcelWriter(to_excel_fn, engine='xlsxwriter')
+    # df.to_excel(writer, sheet_name="RAW DATA", index=False)
+    # df_person1.to_excel(writer, sheet_name="준호 할당량", index=False)
+    # df_person2.to_excel(writer, sheet_name="자현형 할당량", index=False)
+    # df_person3.to_excel(writer, sheet_name="세훈 할당량", index=False)
+    # writer.save()
