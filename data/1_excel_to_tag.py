@@ -278,16 +278,19 @@ def build_data_new(fns, column_names_to_keys, ner_tags):
 
     # TODO : (1) 필요한 데이터 excel에서 파싱하기
     cases = parse_dataframe(df, column_names_to_keys)
-    print(cases)
+    # print(cases)
 
     # TODO : (2) 문장 Splitter 적용하기
     splitted_cases = apply_sentence_splitter_new(cases, ner_tags)
 
     # TODO : (3) 각 문장에 태그 부착하기
     merged_cases = merge_texts_and_tags_new(splitted_cases)
-    print(merged_cases)
+    # print(merged_cases)
 
     # TODO : (4) JSON File에 저장
+    with open(to_fn, 'w', encoding='utf-8') as f:
+        json.dump(merged_cases, f, indent=4, ensure_ascii=False)
+        print("NER data is dumped at  ", to_fn)
 
 if __name__ == '__main__':
     to_folder = os.path.join("./", "run")
