@@ -23,7 +23,7 @@ def split_data(fns, seed):
 
     with open(to_test_fn, 'w', encoding='utf-8') as f:
         json.dump(test_data, f, indent=4, ensure_ascii=False)
-        print("[Train] NER data is dumped at  ", to_test_fn)
+        print("[Test] NER data is dumped at  ", to_test_fn)
 
 
 if __name__ == '__main__':

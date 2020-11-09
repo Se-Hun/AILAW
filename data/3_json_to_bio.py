@@ -46,7 +46,7 @@ import json
 from common.utils import prepare_dir
 
 def build_data(fns, mode):
-    in_fn = fns["input"]
+    in_fn = fns["input"][mode]
     to_fn = fns["output"][mode]
 
     bio_data = []
@@ -71,7 +71,10 @@ if __name__ == '__main__':
     prepare_dir(to_folder)
 
     fns = {
-        "input": os.path.join("./", "run", "law_ner_tag.json"),
+        "input": {
+            "train" : os.path.join("./", "run", "train_ner_data.json"),
+            "test" : os.path.join("./", "run", "test_ner_data.json")
+        },
         "output": {
             "train" : os.path.join(to_folder, "train_bio_data.txt"),
             "test" : os.path.join(to_folder, "test_bio_data.txt")
