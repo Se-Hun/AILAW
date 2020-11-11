@@ -6,7 +6,8 @@ import numpy as np
 
 import torch
 
-from common.utils import is_gpu_available
+from common.utils import is_gpu_available, prepare_dir
+from common.ml.hparams import HParams
 
 def run_train():
     return None
@@ -55,3 +56,43 @@ if __name__ == '__main__':
     # device ---------------------------------------------------------------------------
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_id
     if not is_gpu_available(): args.use_gpu = False
+
+    # data directory -------------------------------------------------------------------
+    data_dir = os.path.join("./", "data", "run")
+
+    # model directory ------------------------------------------------------------------
+    model_dir = os.path.join("./", "model")
+    prepare_dir(model_dir)
+
+    # fns ------------------------------------------------------------------------------
+    fns = {
+        "input" : {
+            "train" : os.path.join(data_dir, "~~~~"),
+            "test" : os.path.join(data_dir, "~~~~")
+        },
+        "output" : {
+            "last" : os.path.join(model_dir, "model.out"),
+            "best" : os.path.join(model_dir, "model.best.out"),
+            "result" : os.path.join(model_dir, "result.txt")
+        }
+    }
+
+    if args.do_train:
+        hps = HParams(
+            # For Training
+            max_epoch=int(args.max_epoch),
+            batch_size=int(args.batch_size),
+            learning_rate=float(args.learning_rate),
+
+            # seq_length
+            max_seq_length = 128,
+
+            # use gpu
+            use_gpu=args.use_gpu
+        )
+        hps.show()
+
+        run_train()
+
+    if args.do_eval:
+        run_eval()
