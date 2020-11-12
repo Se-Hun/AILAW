@@ -27,7 +27,8 @@ def convert_examples_to_features(examples, tokenizer, max_length, label_list=Non
             return label_map[example.label]
         elif output_mode == "regression":
             return float(example.label)
-        raise KeyError(output_mode)
+        else:
+            raise KeyError(output_mode)
 
     labels = [label_from_example(example) for example in examples]
 
@@ -64,7 +65,7 @@ class RelationDataset(Dataset):
 
     def __init__(self, data_dir, tokenizer, max_seq_length, mode):
         self.processor = RelationProcessor()
-        self.output_mode = "Classification"
+        self.output_mode = "classification"
 
         label_list = self.processor.get_labels()
         self.label_list = label_list

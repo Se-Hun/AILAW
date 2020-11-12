@@ -6,13 +6,67 @@ import numpy as np
 
 import torch
 
-from common.utils import prepare_dir, is_gpu_available
+from common.utils import prepare_dir, is_gpu_available, load_model
 from common.ml.hparams import HParams
 
-def run_train():
-    return None
+def get_tokenizer(model_type, large_model, language):
+    if model_type == 'bert':
+        # tokenizer [ BERT x English ]
+        if language == 'eng':
+            from transformers import BertTokenizer
+            if large_model:
+                tokenizer = BertTokenizer.from_pretrained('bert-large-uncased')
+            else:
+                tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
-def run_eval():
+                # tokenizer [ BERT x Korean ]
+        if language == 'kor' or language == 'es' or language == 'th':
+            from transformers import BertTokenizer
+            tokenizer = BertTokenizer.from_pretrained('bert-base-multilingual-cased')
+
+    return tokenizer
+
+def select_text_reader(hps):
+    if hps.model_type == 'bert':
+        if hps.lang_type == 'kor':
+            from classification.network.classifier import BertMultilingualClassifier as model
+        if hps.lang_type == 'eng':
+            from classification.network.classifier import BertEnglishClassifier as model
+
+    return model
+
+def run_train(hps, fns):
+    data_dir = fns["input"]
+    to_fns = fns["output"]
+
+    tokenizer = get_tokenizer(hps.model_type, hps.large_model, hps.lang_type)
+
+    from classification.data.relation_dataset import RelationDataset
+    train_data = RelationDataset(data_dir, tokenizer, max_seq_length=hps.max_seq_length, mode="train")
+    dev_data = RelationDataset(data_dir, tokenizer, max_seq_length=hps.max_seq_length, mode="dev")
+
+    model = select_text_reader(hps)
+    model = model(hps)
+
+    from classification.utils.train import train_classifier as train
+    train(model, train_data, to_fns, dev_data=dev_data)
+
+def run_eval(fns):
+    data_dir = fns["input"]
+    to_fns = fns["output"]
+
+    model_fn = to_fns["best"]
+    model = load_model(model_fn)
+    hps = model.hps
+
+    tokenizer = get_tokenizer(hps.model_type, hps.large_model, hps.lang_type)
+
+    from classification.data.relation_dataset import RelationDataset
+    dev_data = RelationDataset(data_dir, tokenizer, max_seq_length=hps.max_seq_length, mode="dev")
+
+    from classification.utils.predict import eval_classifier as eval
+    eval(model, dev_data, to_fns)
+
     return None
 
 # Main -----------------------------------------------------------------------------------------------------------------
@@ -41,6 +95,7 @@ if __name__ == '__main__':
     parser.add_argument("--batch_size", help="batch_size", default=50)
     parser.add_argument("--learning_rate", help="learning_rate", default=0.001)
     parser.add_argument("--seed", help='seed', type=int, default=42)
+    parser.add_argument("--keep_prob", help="keep prob. for dropout during training", default=0.1)
 
     args = parser.parse_args()
     # ------------------------------------------------------------------------------------
@@ -77,10 +132,7 @@ if __name__ == '__main__':
 
     # fns ------------------------------------------------------------------------------
     fns = {
-        "input": {
-            "train": os.path.join(data_dir, "~~~~"),
-            "test": os.path.join(data_dir, "~~~~")
-        },
+        "input": data_dir,
         "output": {
             "last": os.path.join(model_dir, "model.out"),
             "best": os.path.join(model_dir, "model.best.out"),
@@ -90,6 +142,11 @@ if __name__ == '__main__':
 
     if args.do_train:
         hps = HParams(
+            # model type
+            model_type=args.model_type,
+            large_model=args.large_model,
+            lang_type=lang_type,
+
             # For Training
             max_epoch=int(args.max_epoch),
             batch_size=int(args.batch_size),
@@ -99,11 +156,18 @@ if __name__ == '__main__':
             max_seq_length = max_seq_length,
 
             # use gpu
-            use_gpu=args.use_gpu
+            use_gpu=args.use_gpu,
+
+            # hidden layer
+            hidden_size=768,
+            num_labels=15, # 이거 계속 수정할 것!
+
+            # for dropout
+            keep_prob=args.keep_prob
         )
         hps.show()
 
-        run_train()
+        run_train(hps, fns)
 
     if args.do_eval:
-        run_eval()
+        run_eval(fns)
