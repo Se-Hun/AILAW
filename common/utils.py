@@ -11,6 +11,13 @@ def exist_dir(dir_name):
     else:
         return True
 
+## -------------------------------------- File Reader --------------------------------------------- #
+import csv
+
+def read_tsv(input_file, quotechar=None):
+    with open(input_file, "r", encoding="utf-8-sig") as f:
+        return list(csv.reader(f, delimiter="\t", quotechar=quotechar))
+
 ## -------------------------------------- Pytorch utilities --------------------------------------- ##
 import torch
 
