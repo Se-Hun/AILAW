@@ -1,6 +1,3 @@
-import os
-
-import torch
 from torch.utils.data.dataset import Dataset
 
 from classification.data.data_processor import RelationProcessor

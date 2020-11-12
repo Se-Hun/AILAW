@@ -47,7 +47,7 @@ class DataProcessor:
             return list(csv.reader(f, delimiter="\t", quotechar=quotechar))
 
 class RelationProcessor(DataProcessor):
-    """Processor for the MRPC data set (GLUE version)."""
+    """Processor for the Relation data set."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

@@ -26,7 +26,7 @@ def get_tokenizer(model_type, large_model, language):
 
     return tokenizer
 
-def select_text_reader(hps):
+def select_model(hps):
     if hps.model_type == 'bert':
         if hps.lang_type == 'kor':
             from classification.network.classifier import BertMultilingualClassifier as model
@@ -45,7 +45,7 @@ def run_train(hps, fns):
     train_data = RelationDataset(data_dir, tokenizer, max_seq_length=hps.max_seq_length, mode="train")
     dev_data = RelationDataset(data_dir, tokenizer, max_seq_length=hps.max_seq_length, mode="dev")
 
-    model = select_text_reader(hps)
+    model = select_model(hps)
     model = model(hps)
 
     from classification.utils.train import train_classifier as train
