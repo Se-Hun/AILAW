@@ -76,14 +76,14 @@ class RelationProcessor(DataProcessor):
 
     def get_labels(self):
         """See base class."""
-        return ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"]
+        return ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13"]
 
     def _create_examples(self, lines, set_type):
         """Creates examples for the training, dev and test sets."""
         examples = []
         for (i, line) in enumerate(lines):
-            if i == 0:
-                continue
+            # if i == 0:
+            #     continue
             guid = "%s-%s" % (set_type, i)
             text_a = line[1]
             text_b = None

@@ -73,3 +73,18 @@ def eval_classifier(model, eval_data, to_fns):
         print("Accuracy", file=f)
         print("{:.4f}".format(accuracy), file=f)
     print("Evaluation Result file is dumped at ", to_result_fn)
+
+    # accuracy per labels
+    from sklearn.metrics import confusion_matrix
+    cm = confusion_matrix(all_labels, all_preds)
+    print(cm)
+
+    for label_idx, result in enumerate(cm):
+        correct_num = result[label_idx]
+        num_labels = 0
+        for idx in range(len(result)):
+            num_labels += result[idx]
+        if num_labels == 0:
+            print("{} is X".format(label_idx))
+            continue
+        print("{} accuracy: {}".format(label_idx, (correct_num / num_labels)))

@@ -160,7 +160,7 @@ if __name__ == '__main__':
 
             # hidden layer
             hidden_size=768,
-            num_labels=15, # 이거 계속 수정할 것!
+            num_labels=13, # 이거 계속 수정할 것!
 
             # for dropout
             keep_prob=args.keep_prob
