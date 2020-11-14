@@ -3,3 +3,5 @@ pandas
 selenium
 xlsxwriter
 xlrd
+nltk
+seqeval==0.0.5
