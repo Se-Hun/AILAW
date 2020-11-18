@@ -119,7 +119,7 @@ def paperSearchByPaperName():
         content = request.json
 
         if content :
-            name = content.get('PaperName')
+            name = content.get('name')
             
     else :    
         print("No POST OPTIONS", file=sys.stderr)
