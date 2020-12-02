@@ -145,3 +145,4 @@ crawler/chromedriver.exe
 
 # For model
 model/
+lightning_logs/
