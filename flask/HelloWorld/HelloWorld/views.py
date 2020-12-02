@@ -1,40 +1,21 @@
 # """
 # Routes and views for the flask application.
 # """
-import copy
-import pymongo
-from datetime import date
-from datetime import datetime
-import re
-from flask import Response 
-import os
-from datetime import datetime
-from flask import render_template
 from HelloWorld import app
 from flask_restful import reqparse , abort ,Api , Resource 
 from flask_cors import CORS 
 from flask import request
-import xlrd
-import json
-import ast
-import pyexcel_ods
 import sys
-import codecs
-from itertools import permutations
-from collections import OrderedDict 
-from orderedset import OrderedSet
 
 from flask_jwt_extended import JWTManager
-from flask_jwt_extended import create_access_token
-
-from werkzeug.security import generate_password_hash , check_password_hash
-from pymongo import MongoClient #MongoDB를 위해 import시킴(세훈)
 
 import requests
 import re
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 
+
+from model.prediction.ner_predict import run_predict
 
 jwt = JWTManager(app)
 CORS(app)
@@ -133,5 +114,6 @@ def paperSearchByPaperName():
     crime = getCrime(case_url)
     driver.quit()
 
+    tagged_data = run_predict(crime)
 
 

@@ -141,6 +141,7 @@ crawler/chromedriver.exe
 *.csv
 *.tsv
 *.txt
+*.vocab
 
 # For model
 model/
