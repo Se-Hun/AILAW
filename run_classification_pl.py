@@ -3,8 +3,6 @@ import argparse
 import platform
 from glob import glob
 
-import numpy as np
-
 import torch
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import EarlyStopping
