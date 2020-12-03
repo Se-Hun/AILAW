@@ -84,7 +84,7 @@ class Classification(pl.LightningModule):
 
         # 나중에 self.label_vocab을 이용해서 실제 태그로 바꾸고 text file에 예측 결과들 덤핑하는것도 짜야함!
 
-        self.log("val_acc", test_acc, prog_bar=True)
+        self.log("test_acc", test_acc, prog_bar=True)
         return test_acc
 
     def configure_optimizers(self):

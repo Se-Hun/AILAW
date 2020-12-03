@@ -3,6 +3,9 @@ import argparse
 import platform
 from glob import glob
 
+import numpy as np
+from seqeval import metrics as seqeval_metrics
+
 import torch
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import EarlyStopping
@@ -53,30 +56,31 @@ class NER(pl.LightningModule):
         return result
 
     def validation_epoch_end(self, outputs):
-        preds = torch.cat([x["preds"] for x in outputs])
-        labels = torch.cat([x["labels"] for x in outputs])
+        preds = torch.cat([x["preds"] for x in outputs]).detach().cpu().numpy()
+        labels = torch.cat([x["labels"] for x in outputs]).detach().cpu().numpy()
         loss = torch.stack([x["loss"] for x in outputs]).mean()
 
         # remove padding
+        out_label_list = [[] for _ in range(labels.shape[0])]
+        preds_list = [[] for _ in range(preds.shape[0])]
+        assert (len(out_label_list) == len(preds_list)), "Prediction and Label are not matched."
+
         from torch.nn import CrossEntropyLoss
         pad_token_label_id = CrossEntropyLoss().ignore_index
 
-        final_label_list = []
-        final_preds_list = []
+        label_map = {i: label for i, label in enumerate(list(self.label_vocab.keys()))}
+
         for i in range(labels.shape[0]):
             for j in range(labels.shape[1]):
                 if labels[i, j] != pad_token_label_id:
-                    final_label_list.append(labels[i][j])
-                    final_preds_list.append(preds[i][j])
+                    out_label_list[i].append(label_map[labels[i][j]])
+                    preds_list[i].append(label_map[preds[i][j]])
 
-        final_label_list = torch.LongTensor(final_label_list)
-        final_preds_list = torch.LongTensor(final_preds_list)
-
-        correct_count = torch.sum(final_label_list == final_preds_list)
-        val_acc = correct_count.float() / float(len(final_label_list))
+        # metrics - F1
+        val_f1 = seqeval_metrics.f1_score(out_label_list, preds_list)
 
         self.log("val_loss", loss, prog_bar=True)
-        self.log("val_acc", val_acc, prog_bar=True)
+        self.log("val_f1", val_f1, prog_bar=True)
         return loss
 
     def test_step(self, batch, batch_idx):
@@ -91,31 +95,38 @@ class NER(pl.LightningModule):
         return result
 
     def test_epoch_end(self, outputs):
-        preds = torch.cat([x["preds"] for x in outputs])
-        labels = torch.cat([x["labels"] for x in outputs])
+        preds = torch.cat([x["preds"] for x in outputs]).detach().cpu().numpy()
+        labels = torch.cat([x["labels"] for x in outputs]).detach().cpu().numpy()
 
         # remove padding
+        out_label_list = [[] for _ in range(labels.shape[0])]
+        preds_list = [[] for _ in range(preds.shape[0])]
+        assert(len(out_label_list) == len(preds_list)), "Prediction and Label are not matched."
+
         from torch.nn import CrossEntropyLoss
         pad_token_label_id = CrossEntropyLoss().ignore_index
 
-        final_label_list = []
-        final_preds_list = []
+        label_map = {i: label for i, label in enumerate(list(self.label_vocab.keys()))}
+
         for i in range(labels.shape[0]):
             for j in range(labels.shape[1]):
                 if labels[i, j] != pad_token_label_id:
-                    final_label_list.append(labels[i][j])
-                    final_preds_list.append(preds[i][j])
+                    out_label_list[i].append(label_map[labels[i][j]])
+                    preds_list[i].append(label_map[preds[i][j]])
 
-        final_label_list = torch.LongTensor(final_label_list)
-        final_preds_list = torch.LongTensor(final_preds_list)
+        # metrics - Precision, Recall, F1
+        result = {
+            "precision": seqeval_metrics.precision_score(out_label_list, preds_list),
+            "recall": seqeval_metrics.recall_score(out_label_list, preds_list),
+            "f1": seqeval_metrics.f1_score(out_label_list, preds_list),
+        }
 
-        correct_count = torch.sum(final_label_list == final_preds_list)
-        test_acc = correct_count.float() / float(len(final_label_list))
+        print()
+        print(seqeval_metrics.classification_report(out_label_list, preds_list))
 
         # 나중에 self.label_vocab을 이용해서 실제 태그로 바꾸고 text file에 예측 결과들 덤핑하는것도 짜야함!
 
-        self.log("val_acc", test_acc, prog_bar=True)
-        return test_acc
+        return result
 
     def configure_optimizers(self):
         from transformers import AdamW
