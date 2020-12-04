@@ -9,8 +9,10 @@ def build_data(fns, mode):
 
     data = read_tsv(in_fn)
 
+    case_ids = []
     bio_data = []
     for ex_idx, ex in enumerate(data):
+        case_id = ex[0]
         tagged_sentence = ex[1]
 
         label = ["O" for idx in range(len(tagged_sentence))]
@@ -23,8 +25,15 @@ def build_data(fns, mode):
             tag_start_idx = tag_span[0]
             tag_end_idx = tag_span[1] # 실제 end의 한 칸 뒤임
 
-            tag_value_start_idx = re.search('(<([^>]+)>)', matchObj.group()).end()
-            tag_value_end_idx = re.search('(</([^>]+)>)', matchObj.group()).start() - 1
+            try:
+                tag_value_start_idx = re.search('(<([^>]+)>)', matchObj.group()).end()
+                tag_value_end_idx = re.search('(</([^>]+)>)', matchObj.group()).start() - 1
+            except:
+                print(matchObj.group()[1:tag_value_start_idx-1])
+                print(char_sentence)
+                print(label)
+                print("mode: {}".format(mode))
+                raise ValueError(ex_idx)
 
             tag_name = matchObj.group()[1:tag_value_start_idx-1]
 
@@ -54,10 +63,12 @@ def build_data(fns, mode):
             final_label.append(label[idx])
             final_sentence.append(char_sentence[idx])
 
+        case_ids.append(case_id)
         bio_data.append((final_sentence, final_label))
 
     with open(to_fn, "w", encoding='utf-8') as f:
-        for text, label in bio_data:
+        for ex_idx, (text, label) in enumerate(bio_data):
+            print("{}".format(case_ids[ex_idx]), file=f)
             for idx in range(len(label)):
                 print("{}\t{}".format(text[idx], label[idx]), file=f)
             print("----", file=f)

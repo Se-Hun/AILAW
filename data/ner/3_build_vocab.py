@@ -9,6 +9,9 @@ def read_bio_txt(fn, sentence_splitter=None):
         sentence = ''
         labels = []
         for line in f:
+            if ("\t" not in list(line)) and (line.lstrip().rstrip() != sentence_splitter):
+                continue
+
             if line.lstrip().rstrip() == sentence_splitter:
                 sentence_list.append(sentence)
                 label_list.append(labels)

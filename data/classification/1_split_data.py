@@ -18,9 +18,9 @@ def split_data(fns, seed):
 
     train_data, dev_data = data[:split_df_idx], data[split_df_idx:]
 
-    train_data.to_csv(to_train_fn, index=False, header=None, sep="\t")
+    train_data.to_csv(to_train_fn, index=False, header=True, sep="\t")
     print("[Train] Classification data is dumped at  ", to_train_fn)
-    dev_data.to_csv(to_dev_fn, index=False, header=None, sep="\t")
+    dev_data.to_csv(to_dev_fn, index=False, header=True, sep="\t")
     print("[Dev] Classification data is dumped at  ", to_dev_fn)
 
 if __name__ == '__main__':

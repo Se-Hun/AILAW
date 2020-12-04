@@ -2,6 +2,8 @@ import os
 
 def build_vocab(fns):
     import pandas as pd
+    to_train_fn = fns["input"]["train"]
+    to_dev_fn = fns["input"]["dev"]
     train_df = pd.read_csv(fns["input"]["train"], sep='\t')
     # test_df = pd.read_csv(fns["input"]["test"], sep='\t')
     dev_df = pd.read_csv(fns["input"]["dev"], sep='\t')
@@ -17,6 +19,12 @@ def build_vocab(fns):
 
     # building vocab
     label_vocab = [x for x in list(sorted(list(_train_set)))]
+
+    # dumping data -- for removing header
+    train_df.to_csv(to_train_fn, index=False, header=None, sep="\t")
+    print("[Train] NER data is dumped at  ", to_train_fn)
+    dev_df.to_csv(to_dev_fn, index=False, header=None, sep="\t")
+    print("[Dev] NER data is dumped at  ", to_dev_fn)
 
     # dumping vocab file
     label_vocab_fn = fns["output"]["label_vocab"]

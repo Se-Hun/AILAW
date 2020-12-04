@@ -11,12 +11,12 @@ def split_data(fns, seed):
     to_train_fn = fns["output"]["train"]
     to_dev_fn = fns["output"]["dev"]
 
-    train_data = []
-    dev_data = []
-    with open(in_fn, 'r', encoding="utf-8-sig") as f:
-        data = pd.DataFrame(csv.reader(f, delimiter="\t"))
+    data = pd.read_csv(in_fn, sep='\t')
 
-        train_data, dev_data = train_test_split(data, test_size=0.2, random_state=seed)
+    split_case_id = (data.iloc[len(data)-1]['ID'] // 10) * 8
+    split_df_idx = data.loc[data['ID'] == split_case_id].index[0]
+
+    train_data, dev_data = data[:split_df_idx], data[split_df_idx:]
 
     train_data.to_csv(to_train_fn, index=False, header=None, sep="\t")
     print("[Train] NER data is dumped at  ", to_train_fn)
