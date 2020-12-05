@@ -146,3 +146,6 @@ crawler/chromedriver.exe
 # For model
 model/
 lightning_logs/
+
+# this directory is to plot various visualization for paper.
+data/data_analysis/
