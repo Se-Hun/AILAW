@@ -47,6 +47,7 @@ def split_data(fns, seed):
     for case_id in train_case_ids:
         case_sentences = dict_about_case_id[case_id]["sentences"]
         case_relations = dict_about_case_id[case_id]["relation"]
+        assert (len(case_sentences) == len(case_relations)), "Sentence and Label are not matched at, {}".format(case_id)
         for case_sentence in case_sentences:
             train_data_dict["ID"].append(case_id)
             train_data_dict["sentences"].append(case_sentence)
@@ -55,6 +56,7 @@ def split_data(fns, seed):
     for case_id in dev_case_ids:
         case_sentences = dict_about_case_id[case_id]["sentences"]
         case_relations = dict_about_case_id[case_id]["relation"]
+        assert (len(case_sentences) == len(case_relations)), "Sentence and Label are not matched at, {}".format(case_id)
         for case_sentence in case_sentences:
             dev_data_dict["ID"].append(case_id)
             dev_data_dict["sentences"].append(case_sentence)
