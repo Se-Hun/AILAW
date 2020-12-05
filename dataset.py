@@ -16,6 +16,9 @@ class NERDataset(Dataset):
 
         self.max_seq_len = max_seq_len
 
+        # save all case ids
+        # self.case_ids = case_ids
+
         # for debugging -- to smallset
         # N = 70
         # bio_data = bio_data[:N]
@@ -34,6 +37,7 @@ class NERDataset(Dataset):
 
     def __getitem__(self, i):
         feature = self.features[i]
+        # case_ids = self.case_ids[i]
 
         # Convert to Tensors and build dataset
         input_ids = torch.tensor(feature.input_ids, dtype=torch.long)
@@ -65,8 +69,8 @@ class ClassificationDataset(Dataset):
         self.texts = []
         self.labels = []
         for row_idx, (index, row) in enumerate(df_iterator):
-            text = row["text"]
-            label_text = row["label"]
+            text = row[1]
+            label_text = row[2]
 
             text_obj = tokenizer(text, padding='max_length', max_length=self.max_seq_len, truncation=True)
             label_id = self.label_vocab[label_text]
@@ -139,11 +143,17 @@ class NER_Data_Module(pl.LightningDataModule):
         return vocab
 
     def _read_txt(self, fn, sentence_splitter=None):
+        case_ids = []
         data = []
         with open(fn, 'r', encoding='utf-8') as f:
             sentence = ''
             labels = []
+
             for line in f:
+                if ("\t" not in list(line)) and (line.lstrip().rstrip() != sentence_splitter):
+                    case_ids.append(int(line.lstrip().rstrip()))
+                    continue
+
                 if line.lstrip().rstrip() == sentence_splitter:
                     data.append((sentence, labels))
                     sentence = ''
