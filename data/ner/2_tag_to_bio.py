@@ -3,7 +3,7 @@ import re
 
 from common.utils import read_tsv
 
-def build_data(fns, mode):
+def build_data(fns, mode, valid_tags):
     in_fn = fns["input"][mode]
     to_fn = fns["output"][mode]
 
@@ -36,13 +36,18 @@ def build_data(fns, mode):
                 raise ValueError(ex_idx)
 
             tag_name = matchObj.group()[1:tag_value_start_idx-1]
+            # if tag_name not in valid_tags:
+            #     print(case_id)
+            #     print(tag_name)
+            #     raise ValueError(ex_idx)
 
             tag_value_start_idx = tag_value_start_idx + tag_start_idx
             tag_value_end_idx = tag_value_end_idx + tag_start_idx
 
             for idx in range(tag_start_idx, tag_end_idx):
                 label[idx] = "X"
-            if tag_name == "weapon" or tag_name == "injured.part":
+            # if tag_name == "crime.weapon" or tag_name == "crime.injured_part":
+            if tag_name not in valid_tags:
                 label[tag_value_start_idx] = "O"
             else:
                 label[tag_value_start_idx] = "B-" + tag_name
@@ -90,5 +95,8 @@ if __name__ == '__main__':
         }
     }
 
-    build_data(fns, "train")
-    build_data(fns, "dev")
+    tag_name = ["crime.what", "crime.when", "crime.where", "victim.age"]
+    # tag_name = ["crime.what", "crime.when", "crime.where", "victim.age", "crime.injured_part", "crime.weapon"]
+
+    build_data(fns, "train", tag_name)
+    build_data(fns, "dev", tag_name)
