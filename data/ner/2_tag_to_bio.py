@@ -58,7 +58,7 @@ def build_data(fns, mode, valid_tags):
             end_tag = re.search('(</([^>]+)>)', matchObj.group()).group()
             end_tag_name = end_tag[2:len(end_tag)-1]
 
-            assert (tag_name == end_tag_name), "tag name is not equal at row {} ({}, {})".format(ex_idx+1, tag_name, end_tag_name)
+            assert (tag_name == end_tag_name), "tag name is not equal at row {} ({}, {}) - {}".format(ex_idx+1, tag_name, end_tag_name, tagged_sentence)
 
         final_label = []
         final_sentence = []
