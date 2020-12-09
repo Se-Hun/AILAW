@@ -30,9 +30,7 @@ def build_data(fns, mode, valid_tags):
                 tag_value_end_idx = re.search('(</([^>]+)>)', matchObj.group()).start() - 1
             except:
                 print(matchObj.group()[1:tag_value_start_idx-1])
-                print(char_sentence)
-                print(label)
-                print("mode: {}".format(mode))
+                print(tagged_sentence)
                 raise ValueError(ex_idx)
 
             tag_name = matchObj.group()[1:tag_value_start_idx-1]
