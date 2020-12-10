@@ -122,7 +122,7 @@ class NER(pl.LightningModule):
         }
 
         print()
-        print(seqeval_metrics.classification_report(out_label_list, preds_list))
+        print(seqeval_metrics.classification_report(out_label_list, preds_list, digits=4))
 
         # 나중에 self.label_vocab을 이용해서 실제 태그로 바꾸고 text file에 예측 결과들 덤핑하는것도 짜야함!
 
