@@ -41,8 +41,7 @@ if __name__ == '__main__':
     fns = {
         "input": {
             "train" : os.path.join(data_folder, "train.tsv"),
-            "dev" : os.path.join(data_folder, "dev.tsv"),
-            # "test" : os.path.join(data_folder, "dev.bio.txt")
+            "dev" : os.path.join(data_folder, "dev.tsv")
         },
         "output": {
             "label_vocab" : os.path.join(data_folder, "label.vocab")

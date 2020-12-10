@@ -7,6 +7,8 @@ import torch
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import EarlyStopping
 
+from sklearn.metrics import classification_report, confusion_matrix
+
 class Classification(pl.LightningModule):
     def __init__(self,
                  task,
@@ -82,7 +84,21 @@ class Classification(pl.LightningModule):
         correct_count = torch.sum(labels == preds)
         test_acc = correct_count.float() / float(len(labels))
 
-        # 나중에 self.label_vocab을 이용해서 실제 태그로 바꾸고 text file에 예측 결과들 덤핑하는것도 짜야함!
+        # scores per class
+        class_scores = classification_report(labels.cpu().numpy(), preds.cpu().numpy(), digits=4)
+        print(class_scores)
+        matrix = confusion_matrix(labels.cpu().numpy(), preds.cpu().numpy())
+        print("0번 클래스가 없으므로 1번부터로 생각하면 됨!!!")
+        class_accuracy = matrix.diagonal() / matrix.sum(axis=1)
+        print(class_accuracy)
+
+        # dump predicted outputs
+        predicted_outputs_fn = os.path.join(self.trainer.callbacks[1].dirpath, 'predicted_outputs.txt')
+        predicted_outputs = labels.cpu().tolist()
+        with open(predicted_outputs_fn, "w", encoding='utf-8') as f:
+            for output in predicted_outputs:
+                print(output, file=f)
+            print("Predicted Outputs are dumped at {}".format(predicted_outputs_fn))
 
         self.log("test_acc", test_acc, prog_bar=True)
         return test_acc
@@ -126,6 +142,9 @@ def main():
     # model specific -------------------------------------------------------------------------------
     parser.add_argument("--text_reader", help="bert, kobert, koelectra, others, ...", default="bert")
 
+    # data type ------------------------------------------------------------------------------------
+    parser.add_argument("--data_type", help="classification, doc_classification", default="classification")
+
     # experiment settings --------------------------------------------------------------------------
     parser.add_argument("--max_seq_length", default=128, type=int,
                         help="The maximum total input sequence length after WordPiece tokenization. \n"
@@ -141,14 +160,14 @@ def main():
 
     # Dataset ----------------------------------------------------------------------------------------------------------
     from dataset import Classification_Data_Module
-    dm = Classification_Data_Module("classification", args.text_reader, args.max_seq_length, args.batch_size)
+    dm = Classification_Data_Module(args.data_type, args.text_reader, args.max_seq_length, args.batch_size)
     dm.prepare_data()
     # ------------------------------------------------------------------------------------------------------------------
 
     # Model Checkpoint -------------------------------------------------------------------------------------------------
     from pytorch_lightning.callbacks import ModelCheckpoint
     model_name = '{}'.format(args.text_reader)
-    model_folder = './model/{}/{}'.format("classification", model_name)
+    model_folder = './model/{}/{}'.format(args.data_type, model_name)
     checkpoint_callback = ModelCheckpoint(monitor='val_loss',
                                           dirpath=model_folder,
                                           filename='{epoch:02d}-{val_loss:.2f}')
@@ -172,7 +191,7 @@ def main():
 
     # Do train !
     if args.do_train:
-        model = Classification("classification", args.text_reader, dm.num_labels, dm.label_vocab)
+        model = Classification(args.data_type, args.text_reader, dm.num_labels, dm.label_vocab)
         trainer.fit(model, dm)
 
     # Do predict !

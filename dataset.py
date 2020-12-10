@@ -90,6 +90,46 @@ class ClassificationDataset(Dataset):
 
     def __len__(self):
         return (len(self.texts))
+
+class DocumentClassificationDataset(Dataset):
+    def __init__(self, df, tokenizer, label_vocab, max_seq_len):
+        self.tokenizer = tokenizer
+        self.label_vocab = label_vocab
+
+        self.max_seq_len = max_seq_len
+
+        # for debugging -- to smallset
+        # N = 70
+        # df = df[:N]
+
+        # transform all data
+        from tqdm.auto import tqdm
+        df_iterator = tqdm(df.iterrows(), desc="Iteration")
+
+        self.texts = []
+        self.labels = []
+        for row_idx, (index, row) in enumerate(df_iterator):
+            text = row[1]
+            label_text = row[2]
+
+            text_obj = tokenizer(text, padding='max_length', max_length=self.max_seq_len, truncation=True)
+            label_id = self.label_vocab[label_text]
+
+            self.texts.append(text_obj)
+            self.labels.append(label_id)
+
+    def __getitem__(self, i):
+        input_ids = np.array(self.texts[i]['input_ids'])
+        token_type_ids = np.array(self.texts[i]['token_type_ids'])
+        attention_mask = np.array(self.texts[i]['attention_mask'])
+
+        label_ids = np.array(self.labels[i])
+
+        item = [input_ids, token_type_ids, attention_mask, label_ids]
+        return item
+
+    def __len__(self):
+        return (len(self.texts))
 # ----------------------------------------------------------------------------------------------------------------------
 
 # Data Modules ---------------------------------------------------------------------------------------------------------
@@ -201,9 +241,9 @@ class Classification_Data_Module(pl.LightningDataModule):
         self.num_labels = len(label_vocab)
 
         # read data
-        train_df = pd.read_csv(os.path.join(self.data_dir, "train.tsv"), sep='\t')
-        valid_df = pd.read_csv(os.path.join(self.data_dir, "dev.tsv"), sep='\t')
-        test_df = pd.read_csv(os.path.join(self.data_dir, "dev.tsv"), sep='\t')
+        train_df = pd.read_csv(os.path.join(self.data_dir, "train.tsv"), sep='\t', header=None)
+        valid_df = pd.read_csv(os.path.join(self.data_dir, "dev.tsv"), sep='\t', header=None)
+        test_df = pd.read_csv(os.path.join(self.data_dir, "dev.tsv"), sep='\t', header=None)
 
         # building dataset
         dataset = task_to_dataset[self.task]
@@ -243,6 +283,7 @@ class Classification_Data_Module(pl.LightningDataModule):
 
 task_to_dataset = {
     "ner" : NERDataset,
-    "classification" : ClassificationDataset
+    "classification" : ClassificationDataset,
+    "doc_classification" : DocumentClassificationDataset
 }
 #-----------------------------------------------------------------------------------------------------------------------

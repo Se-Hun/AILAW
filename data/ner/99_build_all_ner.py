@@ -1,9 +1,3 @@
-"""
-    Build All Data for Experiments
-
-    Author : Sangkeun Jung (2020)
-"""
-
 import os
 
 if __name__ == '__main__':
