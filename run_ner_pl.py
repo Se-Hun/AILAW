@@ -3,7 +3,6 @@ import argparse
 import platform
 from glob import glob
 
-import numpy as np
 from seqeval import metrics as seqeval_metrics
 
 import torch
@@ -124,7 +123,14 @@ class NER(pl.LightningModule):
         print()
         print(seqeval_metrics.classification_report(out_label_list, preds_list, digits=4))
 
-        # 나중에 self.label_vocab을 이용해서 실제 태그로 바꾸고 text file에 예측 결과들 덤핑하는것도 짜야함!
+        # dump predicted outputs
+        predicted_outputs_fn = os.path.join(self.trainer.callbacks[1].dirpath, 'predicted_outputs.txt')
+        predicted_outputs = preds_list
+
+        with open(predicted_outputs_fn, "w", encoding='utf-8') as f:
+            for output in predicted_outputs:
+                print(output, file=f)
+            print("Predicted Outputs are dumped at {}".format(predicted_outputs_fn))
 
         return result
 

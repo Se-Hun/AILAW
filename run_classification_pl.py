@@ -88,7 +88,7 @@ class Classification(pl.LightningModule):
         class_scores = classification_report(labels.cpu().numpy(), preds.cpu().numpy(), digits=4)
         print(class_scores)
         matrix = confusion_matrix(labels.cpu().numpy(), preds.cpu().numpy())
-        print("0번 클래스가 없으므로 1번부터로 생각하면 됨!!!")
+        print(matrix)
         class_accuracy = matrix.diagonal() / matrix.sum(axis=1)
         print(class_accuracy)
 
