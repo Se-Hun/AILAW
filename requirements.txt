@@ -1,7 +1,0 @@
-openpyxl
-pandas
-selenium
-xlsxwriter
-xlrd
-nltk
-seqeval
