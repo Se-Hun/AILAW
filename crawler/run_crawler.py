@@ -118,10 +118,7 @@ def crawling(keyword):
 
 
 if __name__ == '__main__':
-    # keywords = ["유사강간", "준강간"] # For Testing
-    # keywords = ["유사강간","준강간","준강제추행"] # For Testing
     keywords = ["강제추행","강간","유사강간","준강간","준강제추행","간음"] # 성범죄
-
     # keywords = [] # 폭행
     # keywords = [] # 살인
 
@@ -147,20 +144,5 @@ if __name__ == '__main__':
 
     df = pd.DataFrame(df_construction, columns=column_names)
 
-    # # For Assignment to each other people
-    # N = 500 # case idx -- this code is separating data per this number.
-    # split_index1 = df.loc[df['id'] == str(N)].index[0]
-    # split_index2 = df.loc[df['id'] == str(N+N)].index[0]
-    # df_person1 = df[:split_index1]
-    # df_person2 = df[split_index1:split_index2]
-    # df_person3 = df[split_index2:]
-
     to_excel_fn = "./new_data.xlsx"
     df.to_excel(to_excel_fn)
-
-    # writer = pd.ExcelWriter(to_excel_fn, engine='xlsxwriter')
-    # df.to_excel(writer, sheet_name="RAW DATA", index=False)
-    # df_person1.to_excel(writer, sheet_name="준호 할당량", index=False)
-    # df_person2.to_excel(writer, sheet_name="자현형 할당량", index=False)
-    # df_person3.to_excel(writer, sheet_name="세훈 할당량", index=False)
-    # writer.save()
