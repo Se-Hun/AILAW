@@ -58,12 +58,6 @@ def build_vocab(fns):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--task", default="ner", help="What task do you want ?")
-    args = parser.parse_args()
-
-    task = args.task
-
     data_folder = os.path.join("./", "run")
 
     fns = {

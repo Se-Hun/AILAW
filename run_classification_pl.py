@@ -143,7 +143,7 @@ def main():
     parser.add_argument("--text_reader", help="bert, kobert, koelectra, others, ...", default="bert")
 
     # data type ------------------------------------------------------------------------------------
-    parser.add_argument("--data_type", help="classification, doc_classification", default="classification")
+    parser.add_argument("--data_type", help="csii", default="csii")
 
     # experiment settings --------------------------------------------------------------------------
     parser.add_argument("--max_seq_length", default=128, type=int,

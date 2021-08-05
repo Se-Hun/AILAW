@@ -65,7 +65,7 @@ if __name__ == '__main__':
     prepare_dir(to_folder)
 
     fns = {
-        "input": os.path.join("./", "ner.tsv"),
+        "input": os.path.join("./", "data.tsv"),
         "output": {
             "train": os.path.join(to_folder, "train.tsv"),
             "dev": os.path.join(to_folder, "dev.tsv")

@@ -188,14 +188,14 @@ def main():
 
     # Dataset ----------------------------------------------------------------------------------------------------------
     from dataset import NER_Data_Module
-    dm = NER_Data_Module("ner", args.text_reader, args.max_seq_length, args.batch_size)
+    dm = NER_Data_Module("csie", args.text_reader, args.max_seq_length, args.batch_size)
     dm.prepare_data()
     # ------------------------------------------------------------------------------------------------------------------
 
     # Model Checkpoint -------------------------------------------------------------------------------------------------
     from pytorch_lightning.callbacks import ModelCheckpoint
     model_name = '{}'.format(args.text_reader)
-    model_folder = './model/{}/{}'.format("ner", model_name)
+    model_folder = './model/{}/{}'.format("csie", model_name)
     checkpoint_callback = ModelCheckpoint(monitor='val_loss',
                                           dirpath=model_folder,
                                           filename='{epoch:02d}-{val_loss:.2f}')
@@ -219,7 +219,7 @@ def main():
 
     # Do train !
     if args.do_train:
-        model = NER("ner", args.text_reader, dm.num_labels, dm.label_vocab)
+        model = NER("csie", args.text_reader, dm.num_labels, dm.label_vocab)
         trainer.fit(model, dm)
 
     # Do predict !

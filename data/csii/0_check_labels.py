@@ -24,6 +24,6 @@ def check_labels(fn):
 
 
 if __name__ == '__main__':
-    fn = os.path.join("./", "relation.tsv")
+    fn = os.path.join("./", "data.tsv")
 
     check_labels(fn)

@@ -282,8 +282,8 @@ class Classification_Data_Module(pl.LightningDataModule):
 # You should implement another LightningDataModules.
 
 task_to_dataset = {
-    "ner" : NERDataset,
-    "classification" : ClassificationDataset,
+    "csie" : NERDataset,
+    "csii" : ClassificationDataset,
     "doc_classification" : DocumentClassificationDataset
 }
 #-----------------------------------------------------------------------------------------------------------------------

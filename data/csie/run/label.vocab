@@ -1,0 +1,9 @@
+B-crime.what	0
+B-crime.when	1
+B-crime.where	2
+B-victim.age	3
+I-crime.what	4
+I-crime.when	5
+I-crime.where	6
+I-victim.age	7
+O	8
