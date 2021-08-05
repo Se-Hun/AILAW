@@ -128,24 +128,13 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# For Pycharm
+# Pycharm IDE
 .idea/
 
 # For Crhomedriver -- Each OS Systems
 crawler/chromedriver
 crawler/chromedriver.exe
 
-# For Data File
-*.xlsx
-*.json
-*.csv
-*.tsv
-*.txt
-*.vocab
-
 # For model
 model/
 lightning_logs/
-
-# this directory is to plot various visualization for paper.
-data/data_analysis/
